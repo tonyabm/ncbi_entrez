@@ -20,7 +20,13 @@
                             <input type="text" name="accession_number" placeholder="Accession Number" autocomplete="off" class="layui-input">
                           </div>
                           <div class="layui-input-inline">
+                            <input type="text" name="gene_name" placeholder="Gene Name" autocomplete="off" class="layui-input">
+                          </div>
+                          <div class="layui-input-inline">
                             <input type="text" name="gene_id" placeholder="Gene Id" autocomplete="off" class="layui-input">
+                          </div>
+                          <div class="layui-input-inline">
+                            <input type="text" name="pubmed" placeholder="pubmed article" autocomplete="off" class="layui-input">
                           </div>
                           <button class="layui-btn" lay-submit lay-filter="searchByAccessionNumber">Search</button>
                           <button class="layui-btn" lay-submit lay-filter="reset">Reset</button>
@@ -50,30 +56,86 @@
             // input accession set gene_id to empty
             $('input[name=accession_number]').on('input', function(){
                 $('input[name=gene_id]').val('');
+                $('input[name=gene_name]').val('');
+                $('input[name=pubmed]').val('');
             });
 
             // input gene_id set accession to empty
             $('input[name=gene_id]').on('input', function(){
                 $('input[name=accession_number]').val('');
+                $('input[name=gene_name]').val('');
+                $('input[name=pubmed]').val('');
+            });
+
+            // input gene_name set accession to empty
+            $('input[name=gene_name]').on('input', function(){
+                $('input[name=accession_number]').val('');
+                $('input[name=gene_id]').val('');
+                $('input[name=pubmed]').val('');
+            });
+
+            // input pubmed set accession to empty
+            $('input[name=pubmed]').on('input', function(){
+                $('input[name=accession_number]').val('');
+                $('input[name=gene_id]').val('');
+                $('input[name=gene_name]').val('');
             });
 
             form.on('submit(searchByAccessionNumber)', function(data){
                 var accession = data.field.accession_number,
-                    gene_id = data.field.gene_id;
+                    gene_id = data.field.gene_id,
+                    gene_name = data.field.gene_name,
+                    pubmed = data.field.pubmed;
                 // disabled the button
                 $('.layui-btn').attr('disabled', 'disabled');
                 // add the loading animation
-                var loading = layer.load();
+                var loading = layer.load(),
+                    data = {},
+                    api = '/search_accession';
+                if(pubmed) {
+                    data = {pubmed: pubmed};
+                    api = '/pubmed_search';
+                }
+                else 
+                {
+                    data = {accession: accession, gene_id: gene_id, gene_name: gene_name};
+                }
                 $.ajax({  
-                    url: '/search_accession',  
+                    url: api,  
                     type: 'post',  
-                    data: {accession: accession, gene_id: gene_id}, 
+                    data: data, 
                     success: function(response) {  
-                        if (response.status === 'ok') {  
-                            $('#result-preview').html(response.data);
+                        if (response.status === 'ok') {
+                            console.log(typeof response.data)
+                            if(typeof response.data === 'object') {
+                                $.each(response.data, function(index, article) {
+                                    // 为每篇文章创建一个 HTML 元素
+                                    var articleHtml = '<div class="article">' +
+                                        '<h2>' + article.title + '</h2>' +
+                                        '<p><strong>Authors:</strong> ' + article.names + '</p>' +
+                                        '<p><strong>Journal:</strong> ' + article.journal + '</p>' +
+                                        '<p><strong>Volume:</strong> ' + article.volume + '</p>' +
+                                        '<p><strong>Issue:</strong> ' + (article.issue || 'N/A') + '</p>' +
+                                        '<p><strong>Pages:</strong> ' + (article.pages || 'N/A') + '</p>' +
+                                        '<p><strong>Publication Date:</strong> ' + article.pub_date + '</p>' +
+                                        '<p><strong>PubMed ID:</strong> ' + article.pubmed_id + '</p>' +
+                                        '<p><strong>DOI:</strong> ' + article.doi + '</p>' +
+                                        '</div>';
+
+                                    // 将创建的 HTML 元素添加到容器 div 中
+                                    $('#result-preview').append(articleHtml);
+                                });
+                            }
+                            // if is string
+                            else {
+                                $('#result-preview').html(response.data);
+                            }
+                            $('#result-preview').html();
                             // 这里可以添加额外的代码来解析和美化数据 
                             code({
-                                elem: '#result-preview'
+                                elem: '#result-preview',
+                                preview: true,
+                                layout: ['code', 'preview']
                             });
                         } else {  
                             layer.msg('Failed to retrieve data', {icon: 2});
