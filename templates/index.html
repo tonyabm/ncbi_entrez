@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NCBI数据库信息检索</title>
+  <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+  <link href="{{ url_for('static', filename='layui/css/layui.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="layui-container abm-body-container">
+        <h1 class="abm-page-title">NCBI数据库信息检索</h1>
+        <div class="layui-row">
+            <div class="layui-col-md12">
+                <form class="layui-form layui-form-pane" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                          <div class="layui-input-inline">
+                            <input type="text" name="accession_number" placeholder="Accession Number" autocomplete="off" class="layui-input">
+                          </div>
+                          <div class="layui-input-inline">
+                            <input type="text" name="gene_id" placeholder="Gene Id" autocomplete="off" class="layui-input">
+                          </div>
+                          <button class="layui-btn" lay-submit lay-filter="searchByAccessionNumber">Search</button>
+                          <button class="layui-btn" lay-submit lay-filter="reset">Reset</button>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="">
+                            <pre id="result-preview" class="layui-code result-preview" lay-options="{theme: 'dark'}">
+                            </pre>
+                            <pre id="result-expression-preview" class="layui-code result-expression-preview" lay-options="{theme: 'dark'}">
+                            </pre>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        layui.use(['layer', 'form', 'code'], function(){
+            var form = layui.form,
+            layer = layui.layer,
+            code = layui.code,
+            $ = layui.$;
+
+            // 只允许accession，gene_id 单独提交
+            // input accession set gene_id to empty
+            $('input[name=accession_number]').on('input', function(){
+                $('input[name=gene_id]').val('');
+            });
+
+            // input gene_id set accession to empty
+            $('input[name=gene_id]').on('input', function(){
+                $('input[name=accession_number]').val('');
+            });
+
+            form.on('submit(searchByAccessionNumber)', function(data){
+                var accession = data.field.accession_number,
+                    gene_id = data.field.gene_id;
+                // disabled the button
+                $('.layui-btn').attr('disabled', 'disabled');
+                // add the loading animation
+                var loading = layer.load();
+                $.ajax({  
+                    url: '/search_accession',  
+                    type: 'post',  
+                    data: {accession: accession, gene_id: gene_id}, 
+                    success: function(response) {  
+                        if (response.status === 'ok') {  
+                            $('#result-preview').html(response.data);
+                            // 这里可以添加额外的代码来解析和美化数据 
+                            code({
+                                elem: '#result-preview'
+                            });
+                        } else {  
+                            layer.msg('Failed to retrieve data', {icon: 2});
+                        }  
+                    },  
+                    error: function() {  
+                        layer.msg('Error occurred while fetching data', {icon: 2});
+                    },
+                    complete: function() {
+                        // remove the loading animation
+                        layer.close(loading);
+                        // enable the button
+                        $('.layui-btn').removeAttr('disabled'); 
+                    } 
+                });
+
+                return false;
+            });
+        });
+    </script>
+</body>
+</html>

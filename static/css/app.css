@@ -1,0 +1,12 @@
+body
+{
+    background-color: #eee;
+}
+.abm-page-title{
+    text-align: center;
+    line-height: 2em;
+}
+.abm-body-container {
+    padding: 1rem;
+    background-color: #fff;
+}
