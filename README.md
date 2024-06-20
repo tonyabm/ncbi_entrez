@@ -17,6 +17,7 @@
 - 第五步：打开网页http://127.0.0.1:5000
 - 第六步：输入想要查询的基因信息即可
 
+![Alt text](static/images/example.png?raw=true "Tony ncbi entrez example")
 
 ---
 ### 关于
